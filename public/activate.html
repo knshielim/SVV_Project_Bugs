@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activate Account</title>
+    <link rel="icon" type="image/x-icon" href="./css/Travel.ico">
+    <link rel="stylesheet" href="./css/styles.css">
+    
+</head>
+<body>
+    <div class="wrapper activate">
+        <div class="form-box login">
+
+            <h2>Activate Your Account</h2>
+            <p>Please enter your username and verification token from your email.</p>
+
+            <form id="activateForm">
+
+                <div class="input-box">
+                    <span class="icon"><ion-icon name="id-card"></ion-icon></span>
+                    <input type="text" id="username" name="username" required/>
+                    <label for="username">Username</label><br>
+                </div>
+
+                <div class="input-box">
+                    <span class="icon"><ion-icon name="id-card"></ion-icon></span>
+                    <input type="text" id="token" name="token" required />
+                    <label for="token">Verification Token</label>
+                </div>
+
+                <p id="activateMsg" class="status-message"></p>
+
+                <button class="btn" type="submit" style="margin-top: 10px;">Activate</button>
+            </form>
+
+            <div class="login-register">
+                <div id="links" class="action-links">
+                    <a href="signup.html" id="backToRegisterLink" class="register-link themed-link">Back to Register</a>
+                </div>
+            </div>
+
+        </div>
+        
+    </div>
+
+    <script src="./js/activate.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</body>
+</html>

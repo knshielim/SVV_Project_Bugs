@@ -1,0 +1,540 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+*{
+	margin:0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: 'Poppins', sans-serif;
+}
+
+body {
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;   
+    padding: 60px 0 80px;  
+	min-height: 100vh;
+	background: url('background.jpg') no-repeat;
+	background-size: cover;
+	background-position: center;
+}
+
+.wrapper{
+	margin-top: 20px;
+	position: relative;
+	width: 400px;
+	height: 440px;
+	background: rgba(255, 255, 255, 0.5);
+	border: 2px solid rgba(255, 255, 255, .5);
+	border-radius: 20px;
+	backdrop-filter: blur(20px);
+	box-shadow: 0 0 30px rgba(0, 0, 0, .5);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	overflow: visible;
+	transition:  height .2ease;
+}
+
+.wrapper .form-box{
+	width: 100%;
+	padding: 40px;
+}
+
+.wrapper.register{
+	height: auto;
+	min-height: 900px;
+}
+
+.wrapper.terms {
+    height: auto;
+    max-width: 520px;
+}
+
+.form-box.terms {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.form-box.terms h2 {
+    margin-bottom: 10px;
+}
+
+.terms-intro {
+    text-align: center;
+    color: #162938;
+    margin-bottom: 20px;
+}
+
+.terms-content {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    color: #162938;
+}
+
+.terms-content section h3 {
+    margin-bottom: 6px;
+    font-size: 1.05em;
+}
+
+.terms-content section p {
+    line-height: 1.5;
+    font-size: 0.95em;
+    opacity: 0.9;
+}
+
+
+.wrapper.activate{
+	height: auto;
+    min-height: 0;
+    padding: 20px 0 30px;
+}
+
+.wrapper.activate p{
+	color:#162938;
+}
+.status-message {
+    width: 100%;
+    margin: 12px 0 0;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+    text-align: center;
+    box-shadow: inset 0 0 0 1px rgba(22, 41, 56, 0.15);
+    display: none;
+}
+
+.status-message.error {
+    color: #b6313c;
+}
+
+.status-message.success {
+    color: #0f8b63;
+}
+
+.status-message.visible {
+    display: block;
+}
+
+.form-box h2{
+	font-size: 2em;
+	color: #162938;
+	text-align: center;
+}
+
+.input-box{
+	position: relative;
+	width: 100%;
+	height: 50px;
+	border-bottom: 2px solid #162938;
+	margin: 30px 0;
+}
+
+.input-box label{
+	position: absolute;
+	top: 50%;
+	left: 5px;
+	transform: translateY(-50%);
+	font-size: 1em;
+	color: #162938;
+	font-weight: 500;
+	pointer-events: none;
+	transition: .5s;
+}
+
+.input-box input:focus~label,
+.input-box input:valid~label,
+.input-box.has-content label { 
+	top: -5px;
+}
+
+.input-box input{
+	width: 100%;
+	height: 100%;
+	background: transparent;
+	border: none;
+	outline: none;
+	font-size: 1em;
+	color: #162938;
+	font-weight: 600;
+	padding: 0 35px 0 5px;
+}
+
+.input-box .icon {
+	position: absolute;
+	right: 8px;
+	font-size: 1.2em;
+	color: #162938;
+	line-height: 57px;
+}
+
+.input-box.has-toggle input {
+    padding-right: 70px;
+}
+
+.input-box .icon.lock-icon {
+    right: 45px;
+}
+
+.toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #162938;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+}
+
+.toggle-password:focus-visible {
+    outline: 2px solid #162938;
+    border-radius: 4px;
+}
+
+.btn {
+	width: 100%;
+	height: 45px;
+	background: #162938;
+	border: none;
+	outline: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 1em;
+	color:  #fff;
+	font-weight: 500;
+	
+}
+
+.not_found{
+	width: 25%;
+	height: 45px;
+	background: #162938;
+	border: none;
+	outline: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 1em;
+	color: red; 
+	margin-top: 10px;
+	font-weight: 500;
+}
+
+.login-register{
+	font-size: .9em;
+	color: #162938;
+	text-align: center;
+	font-weight: 500;
+	margin: 25px 0 10px;
+
+}
+
+.login-register p a {
+	color: #162938;
+	text-decoration: none;
+	font-weight:  600;
+}
+
+.login-register p a:hover{
+	text-decoration: underline;
+}
+
+.action-links {
+    display: none;
+    justify-content: center;
+    margin-top: 18px;
+}
+
+.action-links.visible {
+    display: flex;
+}
+
+.themed-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 28px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #0f3b57, #162938);
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 6px 18px rgba(22, 41, 56, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.themed-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(22, 41, 56, 0.35);
+}
+
+.ghost-link {
+    background: transparent;
+    color: #162938;
+    box-shadow: inset 0 0 0 2px rgba(22, 41, 56, 0.4);
+}
+
+.ghost-link:hover {
+    box-shadow: inset 0 0 0 2px rgba(22, 41, 56, 0.55), 0 8px 20px rgba(22, 41, 56, 0.15);
+}
+
+.remember-forgot {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0 25px;
+}
+
+.checkbox-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    color: #162938;
+    font-size: 0.95em;
+    font-weight: 500;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.custom-checkbox {
+    width: 22px;
+    height: 22px;
+    border: 2px solid #162938;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    position: relative;
+}
+
+.custom-checkbox::after {
+    content: "";
+    width: 6px;
+    height: 10px;
+    border: 2px solid #fff;
+    border-top: 0;
+    border-left: 0;
+    position: absolute;
+    top: 0.8px;
+    left: 5px;
+    transform: rotate(45deg) scale(0);
+    transition: transform 0.2s ease;
+}
+
+.checkbox-wrapper input[type="checkbox"]:checked + .custom-checkbox {
+    background: #162938;
+    border-color: #162938;
+}
+
+.checkbox-wrapper input[type="checkbox"]:checked + .custom-checkbox::after {
+    transform: rotate(45deg) scale(1);
+}
+
+.checkbox-wrapper input[type="checkbox"]:focus-visible + .custom-checkbox {
+    outline: 2px solid #162938;
+    outline-offset: 2px;
+}
+
+.checkbox-text a {
+    color: #0f3b57;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.checkbox-text a:hover {
+    text-decoration: none;
+}
+
+/* Bigger custom calendar icon */
+.input-box .custom-calendar {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.3em;   /* make it bigger */
+    color: #162938;
+    pointer-events: none;  /* avoid blocking clicks */
+}
+
+/* Hide the internal date placeholder text */
+input[type="date"]::-webkit-datetime-edit {
+    color: transparent;          /* hide the placeholder */
+}
+
+/* Keep typed/selected date visible */
+input[type="date"]:not(:placeholder-shown)::-webkit-datetime-edit {
+    color: #162938;                 /* restore text color */
+}
+
+/* When date is picked, make text visible */
+input[type="date"]:valid::-webkit-datetime-edit {
+    color: #162938;
+}
+
+/* FULLY REMOVE CHROME AUTOFILL BACKGROUND */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    box-shadow: 0 0 0 1000px transparent inset !important;
+
+    background-color: transparent !important;
+    background-image: none !important;
+
+    -webkit-text-fill-color: #162938 !important;
+    color: #162938 !important;
+
+    transition: background-color 9999s ease-out, color 9999s ease-out;
+}
+
+input,
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    font-family: 'Poppins', sans-serif !important;
+    -webkit-text-fill-color: #162938;  /* adjust as needed */
+    transition: background-color 9999s ease-in-out 0s;
+}
+
+input {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.input-box input[type="date"] ~ label {
+    top: -5px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1); /* optional to recolor */
+    opacity: 1;        /* fully hides it */
+    cursor: pointer;
+	right: 10px;
+	position: absolute;
+}
+
+
+/* Hide the native calendar icon */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Success Page Styles */
+.success-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 20px;
+}
+
+.success-message {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 500px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.success-message h1 {
+    color: #fff;
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+}
+
+.success-icon {
+    font-size: 4rem;
+    color: #4ade80;
+    margin-bottom: 20px;
+}
+
+/* phone number */
+.input-box-group.phone-group {
+    display: flex; 
+    gap: 12px; 
+    margin: 30px 0; 
+    border-bottom: none; 
+}
+
+.input-box-group .input-box {
+    margin: 0; 
+    border-bottom: 2px solid #162938; 
+}
+
+.input-box.phone-code {
+    width: 35%;
+    min-width: 100px;
+    position: relative;
+    padding-left: 0; 
+}
+
+.input-box.phone-number {
+    width: 65%; 
+}
+
+.input-box.phone-code select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 1em;
+    color: #162938;
+    font-weight: 600;
+    padding: 0 35px 0 5px; 
+    cursor: pointer;
+}
+
+/* Hide country name in selected option - show only the code */
+.input-box.phone-code select option:checked {
+    color: #162938;
+}
+
+/* Style to show only code part when selected */
+.input-box.phone-code select {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.input-box.phone-code .icon {
+    right: 8px;
+    font-size: 1.1em;
+    pointer-events: none;
+}
+
+.input-box.phone-code .icon ion-icon[name="call"] {
+    display: none; 
+}
+
+.input-box.phone-code label {
+    left: 5px;
+    top: -5px; 
+}
+
+.input-box-group.phone-group .input-box.phone-number input:focus~label,
+.input-box-group.phone-group .input-box.phone-number input:valid~label,
+.input-box-group.phone-group .input-box.phone-number.has-content label { 
+	top: -5px;
+}
+
+

@@ -4,7 +4,6 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const db = require("../db");
 
-// for email verification
 const nodemailer = require("nodemailer");
 const transporter_gmail = nodemailer.createTransport({
     port: 465,
@@ -29,7 +28,7 @@ function deriveIV(text){
     return crypto.createHash('sha256')
     .update(process.env.SECRET_KEY + text)
     .digest()
-    .subarray(0, 16);  // aes-cbc IV = 16 bytes
+    .subarray(0, 16); 
 }
 
 function encrypt(text){
@@ -63,12 +62,42 @@ router.get("/getdata", async (req, res) => {
     );
 });
 
-// This prevents code duplication in the main route
 async function proceedToUsernameCheck(req, res, username, email, password) {
-    // Re-declare local variables needed in this scope
     const { firstname, lastname, dob, phonenumber } = req.body;
-    
-    // Check username uniqueness - only check verified users
+
+    const usernameRegex = /^[A-Za-z0-9_]+$/;
+    if (username.length < 3) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "Username must be at least 3 characters long." 
+        });
+    }
+    if (!usernameRegex.test(username)) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "Username can only contain letters, numbers, and underscores." 
+        });
+    }
+
+    const dobDate = new Date(dob);
+    const today = new Date();
+    const age = today.getFullYear() - dobDate.getFullYear() - 
+        (today.getMonth() < dobDate.getMonth() || 
+        (today.getMonth() === dobDate.getMonth() && today.getDate() < dobDate.getDate()) ? 1 : 0);
+
+    if (age < 18) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "You must be at least 18 years old to register." 
+        });
+    }
+    if (age > 100) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "Invalid date of birth." 
+        });
+    }
+
     const checkUsernameQuery = "SELECT id FROM users WHERE username = ? AND is_verified = 1 LIMIT 1";
 
     db.query(checkUsernameQuery, [username], async (usernameErr, usernameResults) => {
@@ -87,7 +116,6 @@ async function proceedToUsernameCheck(req, res, username, email, password) {
             });
         }
 
-        // Combined Password Complexity Check
         const complexityRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{6,}$/;
 
         if (!complexityRegex.test(password)) {
@@ -97,14 +125,12 @@ async function proceedToUsernameCheck(req, res, username, email, password) {
             });
         }
 
-        // Hashing and Insertion
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         const verificationToken = crypto.randomBytes(32).toString("hex");
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes 
         
-        // Store sensitive data as JSON string in verification_token field temporarily
         const pendingData = JSON.stringify({
             firstname,
             lastname,
@@ -113,7 +139,6 @@ async function proceedToUsernameCheck(req, res, username, email, password) {
             token: verificationToken
         });
         
-        // Insert minimal data
         const insertQuery = `
             INSERT INTO users (
                 firstname, lastname, dob, phonenumber, username, email, password_hash,
@@ -134,7 +159,6 @@ async function proceedToUsernameCheck(req, res, username, email, password) {
                     });
                 }
                 
-                // send email otp
                 var kalhtml = "<h3>OTP</h3>";
                 kalhtml = kalhtml + "<h1>Your Verification token is " + verificationToken + "<h1>"; 
                 const mailData = {
@@ -165,7 +189,6 @@ async function proceedToUsernameCheck(req, res, username, email, password) {
 router.post("/register", async (req, res) => {
     const { firstname, lastname, dob, phonenumber, username, email, password, confirmPassword, terms } = req.body;
 
-    // Required fields check
     if (!firstname || !dob || !phonenumber || !username || !email || !password || !confirmPassword) {
         return res.status(400).json({ 
             success: false, 
@@ -174,7 +197,7 @@ router.post("/register", async (req, res) => {
     }
 
     const MAX_USERNAME_LEN = 100;
-    const MAX_NAME_LEN = 30; // Protection for verification_token field
+    const MAX_NAME_LEN = 30; 
 	const MAX_PHONE_DIGITS = 20;
 	const MAX_PHONE_FULL_LEN = 30; 
     const MAX_EMAIL_LEN = 255; 
@@ -188,7 +211,6 @@ router.post("/register", async (req, res) => {
         return res.status(400).json({ success: false, message: `Firstname cannot exceed ${MAX_NAME_LEN} characters.` });
     }
     
-    // Lastname is optional, but still needs a length check if provided
     if (lastname && lastname.length > MAX_NAME_LEN) { 
         return res.status(400).json({ success: false, message: `Lastname cannot exceed ${MAX_NAME_LEN} characters.` });
     }
@@ -201,12 +223,10 @@ router.post("/register", async (req, res) => {
         return res.status(400).json({ success: false, message: `Email cannot exceed ${MAX_EMAIL_LEN} characters.` });
     }
 
-    // Password length check
     if (password.length > MAX_PASSWORD_LEN) {
         return res.status(400).json({ success: false, message: `Password cannot exceed ${MAX_PASSWORD_LEN} characters.` });
     }
 
-    // Terms and Conditions agreement check
     if (!terms || (terms !== true && terms !== "true" && terms !== "on")) {
         return res.status(400).json({ 
             success: false, 
@@ -214,10 +234,8 @@ router.post("/register", async (req, res) => {
         });
     }
 
-    // Firstname format & minimum length
 	const generalNameRegex = /^[A-Za-z ]+$/;
 
-    // 1. Firstname: Check minimum length (3) AND format
     if (firstname.length < 3 || !generalNameRegex.test(firstname)) {
         return res.status(400).json({
             success: false,
@@ -225,7 +243,6 @@ router.post("/register", async (req, res) => {
         });
     }
 
-    // 2. Lastname: Check format ONLY if provided
     if (lastname && !generalNameRegex.test(lastname)) {
          return res.status(400).json({
             success: false,
@@ -233,8 +250,7 @@ router.post("/register", async (req, res) => {
         });
     }
 
-    // Phonenumber Format Validation
-	const combinedPhoneRegex = /^\+\d{7,20}$/; 
+	const combinedPhoneRegex = /^\+\d{8,19}$/; 
     if (!combinedPhoneRegex.test(phonenumber)) {
         return res.status(400).json({ 
             success: false, 
@@ -242,7 +258,6 @@ router.post("/register", async (req, res) => {
         });
     }
 	
-	// Email Format Validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         return res.status(400).json({ 
@@ -250,8 +265,7 @@ router.post("/register", async (req, res) => {
             message: "Invalid email format" 
         });
     }
-	
-	// Password Match check
+
     if (password !== confirmPassword) {
         return res.status(400).json({ 
             success: false, 
@@ -259,7 +273,6 @@ router.post("/register", async (req, res) => {
         });
     }
     
-    // Password length check (minimum)
     if (password.length < 6) {
         return res.status(400).json({ 
             success: false, 
@@ -268,7 +281,6 @@ router.post("/register", async (req, res) => {
     }
 
     try {
-        // Step 1: Database Email Uniqueness Check (Check for ALL users, verified or not)
         const checkEmailQuery = "SELECT id, is_verified FROM users WHERE email = ? LIMIT 1"; 
         
         db.query(checkEmailQuery, [email], async (err, results) => {
@@ -283,7 +295,6 @@ router.post("/register", async (req, res) => {
             if (results.length > 0) {
                 const existingUser = results[0];
                 
-                // Case A: Email belongs to an already verified user
                 if (existingUser.is_verified === 1) {
                     return res.status(409).json({ 
                         success: false, 
@@ -291,22 +302,18 @@ router.post("/register", async (req, res) => {
                     });
                 } 
                 
-                // Case B: Email belongs to an unverified user (delete old entry)
                 else {
                     const deleteUnverifiedQuery = "DELETE FROM users WHERE id = ?";
                     db.query(deleteUnverifiedQuery, [existingUser.id], (deleteErr) => {
                         if (deleteErr) {
                             console.error("Database deletion error for unverified user:", deleteErr);
-                            // Log the error but continue, as the deletion is not critical to stop registration
                         }
-                        // Continue to username check and insertion after deleting the old row
                         proceedToUsernameCheck(req, res, username, email, password); 
                     });
-                    return; // Stop current execution flow
+                    return; 
                 }
             }
 
-            // Case C: Email is not found in the database (proceed normally)
             proceedToUsernameCheck(req, res, username, email, password);
         });
 
@@ -329,7 +336,6 @@ router.post("/activate", (req, res) => {
         });
     }
 
-    // Check for pending registration
     const sql = `
         SELECT id, is_verified, verification_token, token_expires_at
         FROM users 
@@ -354,7 +360,6 @@ router.post("/activate", (req, res) => {
 
         const user = rows[0];
 
-        // Parse the stored JSON data
         let pendingData;
         try {
             pendingData = JSON.parse(user.verification_token);
@@ -365,8 +370,14 @@ router.post("/activate", (req, res) => {
                 message: "Invalid registration data"
             });
         }
+        
+        if (!/^[a-f0-9]{64}$/i.test(token)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid token format"
+            });
+        }
 
-        // Verify token matches
         if (pendingData.token !== token) {
             return res.status(400).json({
                 success: false,
@@ -374,7 +385,6 @@ router.post("/activate", (req, res) => {
             });
         }
 
-        // Check if token expired
         if (!user.token_expires_at || new Date() > new Date(user.token_expires_at)) {
             const deleteSql = "DELETE FROM users WHERE id = ?";
 
@@ -396,7 +406,6 @@ router.post("/activate", (req, res) => {
             return;
         }
 
-        // NOW store the actual user details after successful verification
         const updateSql = `
             UPDATE users
             SET firstname = ?,

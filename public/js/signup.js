@@ -11,18 +11,14 @@ const clearError = () => {
     errorMsg.classList.remove("visible", "error");
 };
 
-// Hide country name after selection - show only the code
-// But keep full names visible in the dropdown
 const countryCodeSelect = document.getElementById("countryCode");
 if (countryCodeSelect) {
-    // Store original option texts
     Array.from(countryCodeSelect.options).forEach(option => {
         if (option.text) {
             option.setAttribute("data-full-text", option.text);
         }
     });
     
-    // Function to restore all options to full text (for dropdown display)
     function restoreAllOptionTexts() {
         Array.from(countryCodeSelect.options).forEach(option => {
             const fullText = option.getAttribute("data-full-text");
@@ -32,7 +28,6 @@ if (countryCodeSelect) {
         });
     }
     
-    // Function to show only code for selected option
     function showCodeOnly() {
         const selectedOption = countryCodeSelect.options[countryCodeSelect.selectedIndex];
         if (selectedOption && selectedOption.value) {
@@ -43,53 +38,44 @@ if (countryCodeSelect) {
             }
         }
     }
-    
-    // When dropdown opens (focus), restore all option texts so full names are visible
+
     countryCodeSelect.addEventListener("focus", function() {
         restoreAllOptionTexts();
     });
     
-    // When dropdown opens (mousedown), restore all option texts
     countryCodeSelect.addEventListener("mousedown", function() {
         restoreAllOptionTexts();
     });
     
-    // After selection is made, show only code
     countryCodeSelect.addEventListener("change", function() {
-        // Small delay to ensure change event completes
         setTimeout(() => {
             showCodeOnly();
         }, 10);
     });
     
-    // When dropdown closes (blur), show only code for selected
     countryCodeSelect.addEventListener("blur", function() {
         setTimeout(() => {
             showCodeOnly();
         }, 10);
     });
     
-    // Initialize: if there's a pre-selected value, show only code
     if (countryCodeSelect.value) {
         showCodeOnly();
     }
 }
 
-// DOB input
 const dobInput = document.getElementById("dob");
 
-// Auto-open datepicker when clicking input wrapper
 dobInput.parentElement.addEventListener("click", () => {
     dobInput.showPicker?.();
 });
 
-// Limit DOB to only 18–100 years old
 const today = new Date();
 const minAgeDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
 const maxAgeDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
 
-dobInput.max = minAgeDate.toISOString().split("T")[0]; // youngest allowed (18 y/o)
-dobInput.min = maxAgeDate.toISOString().split("T")[0]; // oldest allowed (100 y/o)
+dobInput.max = minAgeDate.toISOString().split("T")[0];
+dobInput.min = maxAgeDate.toISOString().split("T")[0]; 
 
 
 document.querySelectorAll(".toggle-password").forEach((button) => {
@@ -181,20 +167,27 @@ form.addEventListener("submit", async function (e) {
         return;
     }
 	
-    const generalNameRegex = /^[A-Za-z ]+$/;
-	// 1. Firstname: Check minimum length (3) AND format
+    const generalNameRegex = /^[A-Za-z0-9@#$% ]+$/;
     if (firstname.length < 3 || !generalNameRegex.test(firstname)) {
         showError("Firstname must be at least 3 characters and can only contain letters and spaces.");
         return;
     }
     
-    // 2. Lastname: Check format ONLY if provided (since it's optional)
     if (lastname && !generalNameRegex.test(lastname)) {
         showError("Lastname can only contain letters and spaces.");
         return;
     }
 
-	// New Local Number Format and Length Check
+    const usernameRegex = /^[A-Za-z0-9_]+$/;
+    if (username.length < 3) {
+        showError("Username must be at least 3 characters long.");
+        return;
+    }
+    if (!usernameRegex.test(username)) {
+        showError("Username can only contain letters, numbers, and underscores.");
+        return;
+}
+
 	const localNumberRegex = /^[0-9]+$/; 
 	    
 	    if (!localNumberRegex.test(localNumber)) {
@@ -207,55 +200,48 @@ form.addEventListener("submit", async function (e) {
 	        return;
 	    }
 
-	    // Country Code Check
 	    if (!countryCode.startsWith('+') || countryCode.length < 2) {
 	        showError("Please select or enter a valid Country Code starting with '+'.");
 	        return;
 	    }
 
-    // Client-side Validation
     if (!firstname || !username || !email || !password || !confirmPassword ||
         !dob || !phonenumber) {
         showError("All fields are required except lastname");
         return;
     }
 
-    // DOB check: user must be at least 18 years old
     const selectedDob = new Date(dob);
     const ageDiff = today.getFullYear() - selectedDob.getFullYear();
     const birthdayHasPassed = (today.getMonth() > selectedDob.getMonth()) ||
         (today.getMonth() === selectedDob.getMonth() && today.getDate() >= selectedDob.getDate());
     const age = birthdayHasPassed ? ageDiff : ageDiff - 1;
-    if (age < 18) {
+    if (age <= 18) {
         errorMsg.textContent = "You must be at least 18 years old to register.";
         return;
     }
-    // Maximum age (not older than 100)
+
     if (age > 100) {
         errorMsg.textContent = "Birth year too old. Please enter a valid date of birth.";
         return;
     }
 
-	// Email Format Validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         showError("Invalid email format");
         return;
     }
 
-	// Password length check
     if (password.length < 6) {
         showError("Password must be at least 6 characters long");
         return;
     }
 
-	// Password Match check
     if (password !== confirmPassword) {
         showError("Passwords do not match");
         return;
     }
 
-    // Requires: at least one lowercase, one uppercase, one digit, and one special character.
     const complexityRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{6,}$/;
 
     if (!complexityRegex.test(password)) {
@@ -263,14 +249,12 @@ form.addEventListener("submit", async function (e) {
         return;
     }
 
-    // Terms and Conditions checkbox validation
     const termsCheckbox = document.getElementById("terms");
     if (!termsCheckbox.checked) {
         showError("You must agree to the Terms & Conditions to register.");
         return;
     }
 	
-	// Send data using fetch to the server
     try {
         const response = await fetch("/register", {
             method: "POST",

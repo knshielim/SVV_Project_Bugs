@@ -16,6 +16,13 @@ document.getElementById("activateForm").addEventListener("submit", async functio
         return;
     }
 
+    const tokenRegex = /^[A-Za-z0-9-_]+$/;
+	if (!tokenRegex.test(token)) {
+	    msg.textContent = "Invalid token format. Token contains invalid characters.";
+	    msg.classList.add("visible", "error");
+	    return;
+	}
+
     try {
         const response = await fetch("/activate", {
             method: "POST",
@@ -31,7 +38,6 @@ document.getElementById("activateForm").addEventListener("submit", async functio
             msg.textContent = "Email successfully activated! Redirecting to login page...";
             msg.classList.add("visible", "success");
 
-            // Redirect to login page after a few seconds
             setTimeout(() => {
                 window.location.href = "/login.html";
             }, 2000);
@@ -39,7 +45,6 @@ document.getElementById("activateForm").addEventListener("submit", async functio
             msg.textContent = data.message || "Activation failed.";
             msg.classList.add("visible", "error");
 
-            // Display a link back to the register
             linksDiv.classList.add("visible");
         }
     } catch (error) {

@@ -1,8 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("signupForm"); // keep the same ID as your form
+    const form = document.getElementById("signupForm");
     const errorMsg = document.getElementById("errorMsg");
 
-    // Password toggle functionality
     document.querySelectorAll(".toggle-password").forEach((button) => {
         button.addEventListener("click", () => {
             const target = document.getElementById(button.dataset.target);
@@ -51,8 +50,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (result.success) {
                 setTimeout(() => {
-                    window.location.href = "success.html"; // redirect to success page after login
-                }, 1000);
+                    window.location.href = "success.html"; 
+                }, 2000);
             }
         } catch (err) {
             console.error(err);

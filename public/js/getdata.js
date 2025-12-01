@@ -19,7 +19,6 @@ form.addEventListener("submit", async function (e) {
             return;
         }
 
-        // create table
         let html = `
             <table border="1" cellpadding="8" cellspacing="0">
                 <thead>

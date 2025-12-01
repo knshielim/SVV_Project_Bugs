@@ -16,7 +16,7 @@ document.getElementById("activateForm").addEventListener("submit", async functio
         return;
     }
 
-    const tokenRegex = /^[A-Za-z0-9-_]+$/;
+	const tokenRegex = /^[A-Za-z0-9-_]+$/;
 	if (!tokenRegex.test(token)) {
 	    msg.textContent = "Invalid token format. Token contains invalid characters.";
 	    msg.classList.add("visible", "error");

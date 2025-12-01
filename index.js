@@ -1,8 +1,8 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const db = require("./db");
-const registerRoute = require("./routes/register");
+const db = require("./db"); 
+const registerRoute = require("./routes/register"); 
 
 const app = express();
 
@@ -35,7 +35,7 @@ const rateLimit = require("express-rate-limit");
 
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
-    max: 5, 
+    max: 5,
     message: {
         success: false,
         message: "Too many login attempts. Please try again after 15 minutes."

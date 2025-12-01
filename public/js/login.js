@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("signupForm");
+    const form = document.getElementById("signupForm"); 
     const errorMsg = document.getElementById("errorMsg");
 
     document.querySelectorAll(".toggle-password").forEach((button) => {
@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (result.success) {
                 setTimeout(() => {
-                    window.location.href = "success.html"; 
+                    window.location.href = "success.html";
                 }, 2000);
             }
         } catch (err) {

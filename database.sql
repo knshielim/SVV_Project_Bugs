@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
 	username VARCHAR(100) NOT NULL,
 	email VARCHAR(255) UNIQUE NOT NULL,
 	password_hash VARCHAR(255) NOT NULL,
-	verification_token VARCHAR(255),
+	verification_token VARCHAR(1000),
+	pending_data TEXT, 
 	token_expires_at DATETIME NULL,
 	is_verified BOOLEAN DEFAULT FALSE,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

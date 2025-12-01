@@ -38,7 +38,7 @@ if (countryCodeSelect) {
             }
         }
     }
-
+    
     countryCodeSelect.addEventListener("focus", function() {
         restoreAllOptionTexts();
     });
@@ -126,8 +126,8 @@ form.addEventListener("submit", async function (e) {
 	
 	const MAX_USERNAME_LEN = 100;
     const MAX_NAME_LEN = 30; 
-	const MIN_PHONE_DIGITS = 7; 
-    const MAX_PHONE_DIGITS = 15; 
+	const MIN_PHONE_DIGITS = 8; 
+    const MAX_PHONE_DIGITS = 19; 
     const MAX_PHONE_FULL_LEN = 30; 
     const MAX_EMAIL_LEN = 255; 
     const MAX_PASSWORD_LEN = 128;
@@ -177,16 +177,16 @@ form.addEventListener("submit", async function (e) {
         showError("Lastname can only contain letters and spaces.");
         return;
     }
-
-    const usernameRegex = /^[A-Za-z0-9_]+$/;
-    if (username.length < 3) {
-        showError("Username must be at least 3 characters long.");
-        return;
-    }
-    if (!usernameRegex.test(username)) {
-        showError("Username can only contain letters, numbers, and underscores.");
-        return;
-}
+	
+	const usernameRegex = /^[A-Za-z0-9_]+$/;
+	if (username.length < 3) {
+	    showError("Username must be at least 3 characters long.");
+	    return;
+	}
+	if (!usernameRegex.test(username)) {
+	    showError("Username can only contain letters, numbers, and underscores.");
+	    return;
+	}
 
 	const localNumberRegex = /^[0-9]+$/; 
 	    
@@ -220,7 +220,6 @@ form.addEventListener("submit", async function (e) {
         errorMsg.textContent = "You must be at least 18 years old to register.";
         return;
     }
-
     if (age > 100) {
         errorMsg.textContent = "Birth year too old. Please enter a valid date of birth.";
         return;

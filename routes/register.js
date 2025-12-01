@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const db = require("../db");
+const rateLimit = require("express-rate-limit");
 
 const nodemailer = require("nodemailer");
 const transporter_gmail = nodemailer.createTransport({
@@ -10,14 +11,44 @@ const transporter_gmail = nodemailer.createTransport({
     host: "smtp.gmail.com",
     secure: true,
     auth: {
-        user: 'edwanotruyadika26@gmail.com',
-        pass: 'lxfk nlhj umcy vuit',
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
     },
     tls: {
         rejectUnauthorized: false
     }
 });
 
+const registerLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, 
+    max: 5, 
+    message: {
+        success: false,
+        message: "Too many registration attempts. Please try again later."
+    }
+});
+
+const activateLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000, 
+    max: 10, 
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many activation attempts from this IP. Please try again later."
+    }
+});
+
+const publicReadLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, 
+    max: 60, 
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many requests from this IP. Please slow down."
+    }
+});
 
 const KEY = crypto
 .createHash('sha256')
@@ -28,7 +59,7 @@ function deriveIV(text){
     return crypto.createHash('sha256')
     .update(process.env.SECRET_KEY + text)
     .digest()
-    .subarray(0, 16); 
+    .subarray(0, 16);  
 }
 
 function encrypt(text){
@@ -45,7 +76,7 @@ function decrypt(text){
     return (Buffer.concat([decipher.update(encrypteddec), decipher.final()])).toString();
 }
 
-router.get("/getdata", async (req, res) => {
+router.get("/getdata", publicReadLimiter, async (req, res) => {
     db.query(
         "SELECT id, firstname, lastname, DATE(dob) AS dob, phonenumber, username, email FROM users WHERE is_verified = 1",
         (err, result) => {
@@ -62,45 +93,103 @@ router.get("/getdata", async (req, res) => {
     );
 });
 
-async function proceedToUsernameCheck(req, res, username, email, password) {
+function updatePendingUser(existingUserId, finalUsername, email, hashedPassword, verificationToken, pendingData, expiresAt, callback) {
+    const updateQuery = `
+        UPDATE users SET 
+            firstname = 'PENDING',
+            lastname = '',
+            dob = '2000-01-01',
+            phonenumber = '+00000000000',
+            username = ?,
+            email = ?,
+            password_hash = ?,
+            verification_token = ?,
+            pending_data = ?,
+            token_expires_at = ?,
+            is_verified = 0,
+            created_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    `;
+
+    db.query(updateQuery,
+        [finalUsername, email, hashedPassword, verificationToken, pendingData, expiresAt, existingUserId],
+        (err, result) => {
+        if (err) return callback(err);
+        callback(null);
+    });
+}
+
+function sendOtpAndRespond(res, email, verificationToken) {
+    let kalhtml = "<h3>OTP</h3>";
+    kalhtml += "<h1>Your Verification token is " + verificationToken + "<h1>"; 
+
+    const mailData = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Your OTP Code',
+        html: kalhtml
+    };
+
+    transporter_gmail.sendMail(mailData, function (err, info) {
+        if (err) {
+            console.log("Error: ", err);
+        } else {
+            console.log("Sent: ", info);
+        }
+    });
+
+    return res.status(201).json({
+        success: true,
+        message: "Registration successful! Please verify your email. Your account details will be saved after verification.",
+        verificationToken: verificationToken
+    });
+}
+
+async function proceedToUsernameCheck(req, res, username, email, password, existingUserId = null)  {
     const { firstname, lastname, dob, phonenumber } = req.body;
-
+	
     const usernameRegex = /^[A-Za-z0-9_]+$/;
-    if (username.length < 3) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "Username must be at least 3 characters long." 
-        });
-    }
-    if (!usernameRegex.test(username)) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "Username can only contain letters, numbers, and underscores." 
+    const MAX_USERNAME_LEN = 100;
+
+    if (typeof username !== "string") {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid username type"
         });
     }
 
-    const dobDate = new Date(dob);
-    const today = new Date();
-    const age = today.getFullYear() - dobDate.getFullYear() - 
-        (today.getMonth() < dobDate.getMonth() || 
-        (today.getMonth() === dobDate.getMonth() && today.getDate() < dobDate.getDate()) ? 1 : 0);
-
-    if (age < 18) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "You must be at least 18 years old to register." 
-        });
-    }
-    if (age > 100) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "Invalid date of birth." 
+    const trimmedUsername = username.trim();
+    if (trimmedUsername.length < 3 || trimmedUsername.length > MAX_USERNAME_LEN || !usernameRegex.test(trimmedUsername)) {
+        return res.status(400).json({
+            success: false,
+            message: "Username can only contain letters, numbers, and underscores, and must be at least 3 characters long."
         });
     }
 
+    const finalUsername = trimmedUsername;
+	
+	const dobDate = new Date(dob);
+	const today = new Date();
+	const age = today.getFullYear() - dobDate.getFullYear() - 
+	    (today.getMonth() < dobDate.getMonth() || 
+	     (today.getMonth() === dobDate.getMonth() && today.getDate() < dobDate.getDate()) ? 1 : 0);
+
+	if (age < 18) {
+	    return res.status(400).json({ 
+	        success: false, 
+	        message: "You must be at least 18 years old to register." 
+	    });
+	}
+	if (age > 100) {
+	    return res.status(400).json({ 
+	        success: false, 
+	        message: "Invalid date of birth." 
+	    });
+	}
+    
     const checkUsernameQuery = "SELECT id FROM users WHERE username = ? AND is_verified = 1 LIMIT 1";
 
-    db.query(checkUsernameQuery, [username], async (usernameErr, usernameResults) => {
+    db.query(checkUsernameQuery, [finalUsername], async (usernameErr, usernameResults) => {
         if (usernameErr) {
             console.error("Database error:", usernameErr);
             return res.status(500).json({ 
@@ -129,8 +218,8 @@ async function proceedToUsernameCheck(req, res, username, email, password) {
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         const verificationToken = crypto.randomBytes(32).toString("hex");
-        const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes 
-        
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); 
+
         const pendingData = JSON.stringify({
             firstname,
             lastname,
@@ -139,19 +228,49 @@ async function proceedToUsernameCheck(req, res, username, email, password) {
             token: verificationToken
         });
         
+        if (existingUserId) {
+            return updatePendingUser(
+                existingUserId,
+                finalUsername,
+                email,
+                hashedPassword,
+                verificationToken,
+                pendingData,
+                expiresAt,
+                (err) => {
+                    if (err) {
+                        console.error("UPDATE error:", err);
+                        return res.status(500).json({
+                            success: false,
+                            message: "Failed to update existing pending registration"
+                        });
+                    }
+
+                    sendOtpAndRespond(res, email, verificationToken);
+                }
+            );
+        }
+
         const insertQuery = `
             INSERT INTO users (
                 firstname, lastname, dob, phonenumber, username, email, password_hash,
-                verification_token, token_expires_at, is_verified
+                verification_token, pending_data, token_expires_at, is_verified
             ) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
         `;
         
         db.query(
             insertQuery, 
-            ['PENDING', '', '2000-01-01', '+00000000000', username, email, hashedPassword, pendingData, expiresAt],
+            ['PENDING', '', '2000-01-01', '+00000000000', finalUsername, email, hashedPassword, verificationToken, pendingData, expiresAt],
             (err, result) => {
                 if (err) {
+                    if (err.code === "ER_DUP_ENTRY") {
+                        return res.status(409).json({
+                            success: false,
+                            message: "Email already registered. Please use another email."
+                        });
+                    }
+                    
                     console.error("Database insertion error:", err);
                     return res.status(500).json({ 
                         success: false, 
@@ -159,34 +278,14 @@ async function proceedToUsernameCheck(req, res, username, email, password) {
                     });
                 }
                 
-                var kalhtml = "<h3>OTP</h3>";
-                kalhtml = kalhtml + "<h1>Your Verification token is " + verificationToken + "<h1>"; 
-                const mailData = {
-                    from: 'edwanotruyadika26@gmail.com',
-                    to: email,
-                    subject: 'Your OTP Code',
-                    html: kalhtml
-                };
-                transporter_gmail.sendMail(mailData, function (err, info) {
-                    if (err) {
-                        console.log("Error: ", err);
-                    } else {
-                        console.log("Sent: ", info);
-                    }
-                });
-
-                res.status(201).json({
-                    success: true,
-                    message: "Registration successful! Please verify your email. Your account details will be saved after verification.",
-                    verificationToken: verificationToken
-                });
+                sendOtpAndRespond(res, email, verificationToken);
             }
         );
     });
 }
 
 
-router.post("/register", async (req, res) => {
+router.post("/register", registerLimiter, async (req, res) => {
     const { firstname, lastname, dob, phonenumber, username, email, password, confirmPassword, terms } = req.body;
 
     if (!firstname || !dob || !phonenumber || !username || !email || !password || !confirmPassword) {
@@ -250,11 +349,11 @@ router.post("/register", async (req, res) => {
         });
     }
 
-	const combinedPhoneRegex = /^\+\d{8,19}$/; 
+	const combinedPhoneRegex = /^\+\d{8,19}$/;
     if (!combinedPhoneRegex.test(phonenumber)) {
         return res.status(400).json({ 
             success: false, 
-            message: "Invalid phone number format. Must start with '+' followed by 7 to 20 digits." 
+            message: "Invalid phone number format. Must start with '+' followed by 8 to 19 digits." 
         });
     }
 	
@@ -265,14 +364,14 @@ router.post("/register", async (req, res) => {
             message: "Invalid email format" 
         });
     }
-
+	
     if (password !== confirmPassword) {
         return res.status(400).json({ 
             success: false, 
             message: "Passwords do not match" 
         });
     }
-    
+
     if (password.length < 6) {
         return res.status(400).json({ 
             success: false, 
@@ -301,19 +400,8 @@ router.post("/register", async (req, res) => {
                         message: "Email already registered and verified." 
                     });
                 } 
-                
-                else {
-                    const deleteUnverifiedQuery = "DELETE FROM users WHERE id = ?";
-                    db.query(deleteUnverifiedQuery, [existingUser.id], (deleteErr) => {
-                        if (deleteErr) {
-                            console.error("Database deletion error for unverified user:", deleteErr);
-                        }
-                        proceedToUsernameCheck(req, res, username, email, password); 
-                    });
-                    return; 
-                }
+                return proceedToUsernameCheck(req, res, username, email, password, existingUser.id);
             }
-
             proceedToUsernameCheck(req, res, username, email, password);
         });
 
@@ -326,7 +414,7 @@ router.post("/register", async (req, res) => {
     }
 });
 
-router.post("/activate", (req, res) => {
+router.post("/activate", activateLimiter, (req, res) => {
     const { username, token } = req.body;
 
     if (!username || !token) {
@@ -336,13 +424,38 @@ router.post("/activate", (req, res) => {
         });
     }
 
+    const usernameRegex = /^[A-Za-z0-9_]+$/;
+    const MAX_USERNAME_LEN = 100;
+
+    if (typeof username !== "string") {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid username type"
+        });
+    }
+
+    const trimmedUsername = username.trim();
+    if (trimmedUsername.length < 3 || trimmedUsername.length > MAX_USERNAME_LEN || !usernameRegex.test(trimmedUsername)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid username format"
+        });
+    }
+
+    if (!/^[a-f0-9]{64}$/i.test(token)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid token format"
+        });
+    }
+
     const sql = `
-        SELECT id, is_verified, verification_token, token_expires_at
+        SELECT id, is_verified, verification_token, token_expires_at, pending_data
         FROM users 
         WHERE username = ? AND is_verified = 0
     `;
 
-    db.query(sql, [username], (err, rows) => {
+    db.query(sql, [trimmedUsername], (err, rows) => {
         if (err) {
             console.error("DB error during activation:", err);
             return res.status(500).json({
@@ -360,21 +473,21 @@ router.post("/activate", (req, res) => {
 
         const user = rows[0];
 
-        let pendingData;
-        try {
-            pendingData = JSON.parse(user.verification_token);
-        } catch (parseErr) {
-            console.error("Error parsing pending data:", parseErr);
-            return res.status(500).json({
-                success: false,
-                message: "Invalid registration data"
-            });
-        }
-        
-        if (!/^[a-f0-9]{64}$/i.test(token)) {
+        if (!user.pending_data) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid token format"
+                message: "Pending data missing or invalid. Please register again."
+            });
+        }
+
+        let pendingData;
+        try {
+            pendingData = JSON.parse(user.pending_data);
+        } catch (error) {
+            console.error("Error parsing pending data:", error);
+            return res.status(400).json({
+                success: false,
+                message: "Invalid pending data format. Please register again."
             });
         }
 
